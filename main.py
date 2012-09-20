@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+## This is the main class for the program
 import Image as im
 from diceImage import DiceImage
 from viewer import Viewer
