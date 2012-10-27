@@ -10,7 +10,7 @@ import Image as im
 
 
 class Viewer:
-    def __init__(self, folder, filename,topLayer):
+    def __init__(self, folder,topLayer):
         import os
         print os.getcwd()
         '''
@@ -22,7 +22,7 @@ class Viewer:
         self.Ti = TI(folder)
         print self.Ti.picSize
         self.size = self.Ti.picSize
-        self.lena = self.Ti.getBlock((000,00),(self.size[0],self.size[1]),self.topLayer)
+        self.lena = self.Ti.getBlock((00,00),(self.size[0],self.size[1]),self.topLayer)
         #self.lena.show()
         self.ul = self.Ti.UpperLeft
         self.lr = self.Ti.LowerRight

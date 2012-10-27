@@ -10,7 +10,6 @@ import json
 
 #fileName = '/Users/willem/Desktop/test/ADGhts42_ControlWell_Initial_w1_15%linear.tif'
 
-
 ##osp.join('', inputImage)
 
 class DiceImage:
@@ -105,40 +104,43 @@ class DiceImage:
     
     
     
-    
-    def scaleUp(self,folder,zoom): ##This scales tiles up the image to the next level
-        size=self.tileSize##this is the tilesize
+                                   ###This scales tiles up the image to the next level####
+    def scaleUp(self,folder,zoom): 
+
+        size=self.tilesize  ##this is the tilesize
+
+
         diceX = int(math.ceil(float(self.width)/(size*2**(zoom-1))))##This is how many tiles there are for the previous layer for x and y
         diceY = int(math.ceil(float(self.height)/(size*2**(zoom-1))))
-        zfolder = osp.join(folder,str(zoom-1))##This is the previous layer folder
+        previousFolder = osp.join(folder,str(zoom-1))##This is the previous layer folder
         newfolder = folder+str(zoom)+'/'##new folder
         self.ensure_dir(newfolder)
         import Image as im
         #print "diceX and diceY",diceX,diceY
-        for y in range(0,diceY,2):##goes across every other tile in both directions
+        for y in range(0,diceY,2):## goes across every other tile in both directions
             for x in range(0,diceX,2):
-                print x , y
+                #print x , y
                 tmp=im.new(im.open(self.folder+"0/0-0.tif").mode,(size*2,size*2))##new image for the four
                 if (y==diceY-1):
                     if (x==diceX-1):
                         ##This is if the there is only one tile e.g. corner
-                        tmp.paste(im.open( zfolder+'%d-%d.tif' % (x,y)) ,(0,0))
+                        tmp.paste(im.open( previousFolder+'%d-%d.tif' % (x,y)) ,(0,0))
                     else:
                         ##This is the bottom row if there are odd rows
-                        tmp.paste( im.open( zfolder+'%d-%d.tif' % (x,y)) ,(0,0))
-                        tmp.paste( im.open( zfolder+'%d-%d.tif' % (x+1,y)) ,(size,0))
+                        tmp.paste( im.open( previousFolder+'%d-%d.tif' % (x,y)) ,(0,0))
+                        tmp.paste( im.open( previousFolder+'%d-%d.tif' % (x+1,y)) ,(size,0))
                     
                 elif (y!=diceY-1) and (x==diceX-1):
                     ##This is the last column if there is an odd number of columns
-                    tmp.paste( im.open( zfolder+'%d-%d.tif' % (x,y)) ,(0,0))
-                    tmp.paste( im.open( zfolder+'%d-%d.tif' % (x,y+1)) ,(0,size))
+                    tmp.paste( im.open( previousFolder+'%d-%d.tif' % (x,y)) ,(0,0))
+                    tmp.paste( im.open( previousFolder+'%d-%d.tif' % (x,y+1)) ,(0,size))
                     
                 else:
                     ##Normal four tiles
-                    tmp.paste( im.open( zfolder+'%d-%d.tif' % (x,y)) ,(0,0))
-                    tmp.paste( im.open( zfolder+'%d-%d.tif' % (x,y+1)) ,(0,size))
-                    tmp.paste( im.open( zfolder+'%d-%d.tif' % (x+1,y)) ,(size,0))
-                    tmp.paste( im.open( zfolder+'%d-%d.tif' % (x+1,y+1)) ,(size,size))
+                    tmp.paste( im.open( previousFolder+'%d-%d.tif' % (x,y)) ,(0,0))
+                    tmp.paste( im.open( previousFolder+'%d-%d.tif' % (x,y+1)) ,(0,size))
+                    tmp.paste( im.open( previousFolder+'%d-%d.tif' % (x+1,y)) ,(size,0))
+                    tmp.paste( im.open( previousFolder+'%d-%d.tif' % (x+1,y+1)) ,(size,size))
                 
                 tmp = tmp.resize((size,size))
                 tmp.save(newfolder+'%d-%d.tif'% ((x+2)/2-1,(y+2)/2-1))
