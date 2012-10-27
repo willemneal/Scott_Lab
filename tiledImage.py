@@ -15,9 +15,9 @@ class TiledImage:
         self.imageDir = imageDir
         self.picSize = im.open(imageDir + "new.tif").size
         #print self.picSize
-        ##self.info = json.loads(file(osp.path(imageDir, 'info.json'), 'r').read())
-        self.width = 300
-        self.height = 300
+        self.info = json.loads(file(osp.path(imageDir, 'info.json'), 'r').read())
+        ##self.width = 300
+        ##self.height = 300
         self.tileSize = 1024
         self.size = 1200
 
