@@ -52,7 +52,7 @@ class Main:
     def selectFile(self):
         Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
         filename = askopenfilename() # show an "Open" dialog box and return the path to the selected file
-        folder = os.path.split(filename)[1]
+        folder = os.path.split(filename)[0]
         return filename,folder
 
 #filename = askopenfilename() # show an "Open" dialog box and return the path to the selected file
