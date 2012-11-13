@@ -13,22 +13,20 @@ import json
 ##osp.join('', inputImage)
 
 class DiceImage:
-    def __init__(self,filename):
+    def __init__(self,filename,folder):
         self.filename=filename
-        folder = os.path.split(filename)[1]
-        print filename,folder
-        # info = json.loads(osp.join(folder,'info.json'),'r').read()
-        # self.tileSize=info['tileSize']
-        # self.folder=folder##is the folder of the picture
-        # self.width,self.height = info['width'],info['height']
-        # #self.folder = osp.join(self.folder,osp.split(filename)[1])
-        # self.viewFolder = self.makeBottomLayer(folder,filename)
-        # self.topLayer=info['levels']
-        # #ensure_dir(nextfolder)
-        # for i in range(self.topLayer):
-        #     self.scaleUp(self.folder,i+1)
-        #     print i+1,"done"
-
+        info = json.loads(osp.join(folder,'info.json'),'r').read()
+        self.tileSize=info['tileSize']
+        self.folder=folder##is the folder of the picture
+        self.width,self.height = info['width'],info['height']
+        #self.folder = osp.join(self.folder,osp.split(filename)[1])
+        self.tileMaker(folder,filename)
+        self.topLayer=info['levels']
+        #ensure_dir(nextfolder)
+        for i in range(self.topLayer):
+            self.scaleUp(self.folder,i+1)
+            print i+1,"done"
+        #
         #scaleUp(3,'/Users/willem/Documents/spectrum/',2,256)
         #scaleUp(2,'/Users/willem/Documents/spectrum/',3,256)
         
@@ -79,36 +77,33 @@ class DiceImage:
             shutil.rmtree(d)
         os.makedirs(f)
         
-    def makeBottomLayer(self,folder, filename):
+    def tileMaker(self,folder, filename):
+        ##folder = '/Users/willem/Desktop/TestFolder/'
         import math
         w,h = self.width,self.height
         ##newW =w/(2**(zoom-1))
         ##newH =h/(2**(zoom-1))
         
-        tmp1 = im.open(filename)            ## opens main image
+        tmp1 = im.open(filename)
         diceX = int(math.ceil(float(w)/size))
         diceY = int(math.ceil(float(h)/size))
         print "dice: x, y ",diceX,diceY
         cw = self.size
         ch = self.size
-
-        tmp = im.new(tmp1.mode,(diceX*size,diceY*size))  ## This creates a new image with same mode and
-                                                        #   for extra space
+        tmp = im.new(tmp1.mode,(diceX*size,diceY*size))
         tmp.paste(tmp1,(0,0))
         newfile= osp.join(folder,osp.split(filename)[1])
         tmp.save(newfile)
         filename = newfile
-
-        import tempfile
-        tmpFolder = tempfile.mkdtemp()
-        folder = osp.join(tmpFolder,'0')
+        folder = osp.join(folder,'0')
         self.ensure_dir(folder)
         for row in xrange(diceY):
             for col in xrange(diceX):
                 c = self.readTifChunk(filename, (cw*col, ch*row, cw, ch))
                 im.fromarray(c).save(folder+'%d-%d.tif' % (col,row))
     
-        return tmpFolder
+    
+    
                                    ###This scales tiles up the image to the next level####
     def scaleUp(self,folder,zoom): 
 
