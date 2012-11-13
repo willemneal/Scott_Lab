@@ -10,34 +10,24 @@ import json
 
 #fileName = '/Users/willem/Desktop/test/ADGhts42_ControlWell_Initial_w1_15%linear.tif'
 
-##osp.join('', inputImage) 
-'''
-{
-    "width": 19500,
-    "height": 18500,
-    "levels": 5,
-    "tileSize": 1024
-    }
-'''
+##osp.join('', inputImage)
+
 class DiceImage:
     def __init__(self,filename):
         self.filename=filename
-        folder = osp.split(filename)[0]
+        folder = os.path.split(filename)[1]
         print filename,folder
-        self.folder=folder##is the folder of the picture
-        #info = json.loads(osp.join(folder,'info.json'),'r').read()
-        #print info
-        self.tileSize=1024  #info['tileSize']
-        
-        self.width,self.height = 19500,18500 #info['width'],info['height']
-        #self.folder = osp.join(self.folder,osp.split(filename)[1])
-        self.viewFolder = self.makeBottomLayer(folder,filename)
-        self.topLayer=5 #info['levels']
-        print self.viewFolder
-        #ensure_dir(nextfolder)
-        for i in range(self.topLayer):
-            self.scaleUp(self.viewFolder,i+1)
-            print i+1,"done"
+        # info = json.loads(osp.join(folder,'info.json'),'r').read()
+        # self.tileSize=info['tileSize']
+        # self.folder=folder##is the folder of the picture
+        # self.width,self.height = info['width'],info['height']
+        # #self.folder = osp.join(self.folder,osp.split(filename)[1])
+        # self.viewFolder = self.makeBottomLayer(folder,filename)
+        # self.topLayer=info['levels']
+        # #ensure_dir(nextfolder)
+        # for i in range(self.topLayer):
+        #     self.scaleUp(self.folder,i+1)
+        #     print i+1,"done"
 
         #scaleUp(3,'/Users/willem/Documents/spectrum/',2,256)
         #scaleUp(2,'/Users/willem/Documents/spectrum/',3,256)
@@ -75,11 +65,11 @@ class DiceImage:
     
         return result.astype(np.uint8)
     
-    # w = 10000
-    # h = 6000
-    # dice = 8
-    # cw = w/dice
-    # ch = h/dice
+    w = 10000
+    h = 6000
+    dice = 8
+    cw = w/dice
+    ch = h/dice
     
     def ensure_dir(self,f):
         import os
@@ -94,30 +84,28 @@ class DiceImage:
         w,h = self.width,self.height
         ##newW =w/(2**(zoom-1))
         ##newH =h/(2**(zoom-1))
-        size = self.tileSize
+        
         tmp1 = im.open(filename)            ## opens main image
         diceX = int(math.ceil(float(w)/size))
         diceY = int(math.ceil(float(h)/size))
         print "dice: x, y ",diceX,diceY
-        cw = size
-        ch = size
+        cw = self.size
+        ch = self.size
 
         tmp = im.new(tmp1.mode,(diceX*size,diceY*size))  ## This creates a new image with same mode and
                                                         #   for extra space
         tmp.paste(tmp1,(0,0))
-        
-    #    tmp.save(newfile)
-        tmpFolder = osp.join(folder,'.tempFolder')
-        self.ensure_dir(tmpFolder)
-        newfile= osp.join(tmpFolder,'tmp.tiff')
+        newfile= osp.join(folder,osp.split(filename)[1])
         tmp.save(newfile)
-        print tmpFolder
         filename = newfile
+
+        import tempfile
+        tmpFolder = tempfile.mkdtemp()
         folder = osp.join(tmpFolder,'0')
         self.ensure_dir(folder)
         for row in xrange(diceY):
             for col in xrange(diceX):
-                c = self.readTifChunk(newfile, (cw*col, ch*row, cw, ch))
+                c = self.readTifChunk(filename, (cw*col, ch*row, cw, ch))
                 im.fromarray(c).save(folder+'%d-%d.tif' % (col,row))
     
         return tmpFolder
@@ -130,14 +118,14 @@ class DiceImage:
         diceX = int(math.ceil(float(self.width)/(size*2**(zoom-1))))##This is how many tiles there are for the previous layer for x and y
         diceY = int(math.ceil(float(self.height)/(size*2**(zoom-1))))
         previousFolder = osp.join(folder,str(zoom-1))##This is the previous layer folder
-        newfolder = osp.join(folder,str(zoom))##new folder
+        newfolder = folder+str(zoom)+'/'##new folder
         self.ensure_dir(newfolder)
         import Image as im
         #print "diceX and diceY",diceX,diceY
         for y in range(0,diceY,2):## goes across every other tile in both directions
             for x in range(0,diceX,2):
                 #print x , y
-                tmp=im.new(im.open(folder+"0/0-0.tif").mode,(size*2,size*2))##new image for the four
+                tmp=im.new(im.open(self.folder+"0/0-0.tif").mode,(size*2,size*2))##new image for the four
                 if (y==diceY-1):
                     if (x==diceX-1):
                         ##This is if the there is only one tile e.g. corner
