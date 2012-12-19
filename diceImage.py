@@ -4,6 +4,8 @@ import numpy as np
 import os.path as osp
 import math
 import json
+import pdb
+import os
 
 #inputImage = 'ADGhts42_ControlWell_Initial_w1_15%25linear.tif'
 #inputImage = 'ImagePick/SmallBF.tif'
@@ -13,29 +15,34 @@ import json
 ##osp.join('', inputImage)
 
 class DiceImage:
-    def __init__(self,filename,folder):
+    '''
+    This object takes a filename layers and tileSize from the json object.
+
+    From this information it cuts up the large image into tiles of size given, it puts these into folder '0'
+    located in the same directory as your input file. Then goes up a layer taking four tiles and condensing
+    them into one tile, this folder is '1' and so on until the layer specified.
+    '''
+    def __init__(self,filename):
         self.filename=filename
-        info = json.loads(osp.join(folder,'info.json'),'r').read()
+        self.folder=osp.split(filename)[0] 
+        print osp.join(self.folder,'info.json')
+        Info = osp.join(self.folder,'info.json')
+        info = json.loads(file(Info,'r').read())
         self.tileSize=info['tileSize']
-        self.folder=folder##is the folder of the picture
+
         self.width,self.height = info['width'],info['height']
-        #self.folder = osp.join(self.folder,osp.split(filename)[1])
-        self.tileMaker(folder,filename)
+        
+        self.makeBottom(self.folder,self.filename)  ## this creates the bottom layer of the tiles
         self.topLayer=info['levels']
         #ensure_dir(nextfolder)
         for i in range(self.topLayer):
             self.scaleUp(self.folder,i+1)
-            print i+1,"done"
-        #
-        #scaleUp(3,'/Users/willem/Documents/spectrum/',2,256)
-        #scaleUp(2,'/Users/willem/Documents/spectrum/',3,256)
-        
-    
-   
-    
+
     def readTifChunk(self,fileName, box):
         
-        '''Read a rectangular region from the image file'''
+        '''Read a rectangular region from the image file
+        by Gary Bishop
+        '''
         dtypes = { 'L': np.uint8,
                'I;16B': np.int16,
                }
@@ -63,13 +70,9 @@ class DiceImage:
     
         return result.astype(np.uint8)
     
-    w = 10000
-    h = 6000
-    dice = 8
-    cw = w/dice
-    ch = h/dice
     
     def ensure_dir(self,f):
+        '''checks if dir exists and if it does over writes it.'''
         import os
         import shutil
         d = os.path.dirname(f)
@@ -77,84 +80,73 @@ class DiceImage:
             shutil.rmtree(d)
         os.makedirs(f)
         
-    def tileMaker(self,folder, filename):
-        ##folder = '/Users/willem/Desktop/TestFolder/'
-        import math
+    def makeBottom(self,folder, filename):
         w,h = self.width,self.height
-        ##newW =w/(2**(zoom-1))
-        ##newH =h/(2**(zoom-1))
-        
-        tmp1 = im.open(filename)
-        diceX = int(math.ceil(float(w)/size))
-        diceY = int(math.ceil(float(h)/size))
-        print "dice: x, y ",diceX,diceY
-        cw = self.size
-        ch = self.size
-        tmp = im.new(tmp1.mode,(diceX*size,diceY*size))
-        tmp.paste(tmp1,(0,0))
-        newfile= osp.join(folder,osp.split(filename)[1])
+        size=self.tileSize  ##this is the tileSize
+        originalImage = im.open(filename)##open original
+        columns = int(math.ceil(float(w)/size))     #number of columns
+        rows = int(math.ceil(float(h)/size))        #number of rows
+        #print "dice: x, y ",columns,rows
+        cellWidth = size                            #cell width is the same as tileSize
+        cellHeight = size
+        newfolder = osp.join(folder,'0')            #bottom layer folder '/0'
+        if (self.checkDir(newfolder)):              #check if dir folder is full it returns true
+            return
+        tmp = im.new(originalImage.mode,(columns*size,rows*size))
+        tmp.paste(originalImage,(0,0))
+        newfile= osp.join(folder,"tmp.tif")
         tmp.save(newfile)
         filename = newfile
-        folder = osp.join(folder,'0')
-        self.ensure_dir(folder)
-        for row in xrange(diceY):
-            for col in xrange(diceX):
-                c = self.readTifChunk(filename, (cw*col, ch*row, cw, ch))
-                im.fromarray(c).save(folder+'%d-%d.tif' % (col,row))
-    
-    
-    
-                                   ###This scales tiles up the image to the next level####
-    def scaleUp(self,folder,zoom): 
+        ##pdb.set_trace()
+        #self.ensure_dir(newfolder)
+        for row in xrange(rows):            ## This cuts up the tiles!
+            for col in xrange(columns):
+                c = self.readTifChunk(filename, (cellWidth*col, cellHeight*row, cellWidth, cellHeight))
+                im.fromarray(c).save(osp.join(newfolder,'%d-%d.tif' % (col,row)))
+                                  
+    def scaleUp(self,folder,zoom):
+         ###This scales tiles up the image to the next level#### 
 
-        size=self.tilesize  ##this is the tilesize
+        size=self.tileSize  ##this is the tileSize
 
-
-        diceX = int(math.ceil(float(self.width)/(size*2**(zoom-1))))##This is how many tiles there are for the previous layer for x and y
-        diceY = int(math.ceil(float(self.height)/(size*2**(zoom-1))))
+        columns = int(math.ceil(float(self.width)/(size*2**(zoom-1))))##This is how many tiles there are for the previous layer for x and y
+        rows = int(math.ceil(float(self.height)/(size*2**(zoom-1))))
         previousFolder = osp.join(folder,str(zoom-1))##This is the previous layer folder
-        newfolder = folder+str(zoom)+'/'##new folder
-        self.ensure_dir(newfolder)
+        newfolder = osp.join(folder,str(zoom))##new folder
+        if (self.checkDir(newfolder)):
+            return
         import Image as im
-        #print "diceX and diceY",diceX,diceY
-        for y in range(0,diceY,2):## goes across every other tile in both directions
-            for x in range(0,diceX,2):
+        #print "columns and rows",columns,rows
+        for y in range(0,rows,2):## goes across every other tile in both directions
+            for x in range(0,columns,2):
                 #print x , y
-                tmp=im.new(im.open(self.folder+"0/0-0.tif").mode,(size*2,size*2))##new image for the four
-                if (y==diceY-1):
-                    if (x==diceX-1):
+                tmp=im.new(im.open(osp.join(previousFolder,"0-0.tif")).mode,(size*2,size*2))##new image for the four
+                if (y==rows-1):
+                    if (x==columns-1):
                         ##This is if the there is only one tile e.g. corner
-                        tmp.paste(im.open( previousFolder+'%d-%d.tif' % (x,y)) ,(0,0))
+                        tmp.paste(im.open( osp.join(previousFolder,'%d-%d.tif' % (x,y))) ,(0,0))
                     else:
                         ##This is the bottom row if there are odd rows
-                        tmp.paste( im.open( previousFolder+'%d-%d.tif' % (x,y)) ,(0,0))
-                        tmp.paste( im.open( previousFolder+'%d-%d.tif' % (x+1,y)) ,(size,0))
+                        tmp.paste( im.open( osp.join(previousFolder,'%d-%d.tif' % (x,y))) ,(0,0))
+                        tmp.paste( im.open( osp.join(previousFolder,'%d-%d.tif' % (x+1,y))) ,(size,0))
                     
-                elif (y!=diceY-1) and (x==diceX-1):
+                elif (y!=rows-1) and (x==columns-1):
                     ##This is the last column if there is an odd number of columns
-                    tmp.paste( im.open( previousFolder+'%d-%d.tif' % (x,y)) ,(0,0))
-                    tmp.paste( im.open( previousFolder+'%d-%d.tif' % (x,y+1)) ,(0,size))
+                    tmp.paste( im.open( osp.join(previousFolder,'%d-%d.tif' % (x,y))) ,(0,0))
+                    tmp.paste( im.open( osp.join(previousFolder,'%d-%d.tif' % (x,y+1))) ,(0,size))
                     
                 else:
                     ##Normal four tiles
-                    tmp.paste( im.open( previousFolder+'%d-%d.tif' % (x,y)) ,(0,0))
-                    tmp.paste( im.open( previousFolder+'%d-%d.tif' % (x,y+1)) ,(0,size))
-                    tmp.paste( im.open( previousFolder+'%d-%d.tif' % (x+1,y)) ,(size,0))
-                    tmp.paste( im.open( previousFolder+'%d-%d.tif' % (x+1,y+1)) ,(size,size))
-                
+                    tmp.paste( im.open( osp.join(previousFolder,'%d-%d.tif' % (x,y))) ,(0,0))
+                    tmp.paste( im.open( osp.join(previousFolder,'%d-%d.tif' % (x,y+1))) ,(0,size))
+                    tmp.paste( im.open( osp.join(previousFolder,'%d-%d.tif' % (x+1,y))) ,(size,0))
+                    tmp.paste( im.open( osp.join(previousFolder,'%d-%d.tif' % (x+1,y+1))) ,(size,size))
                 tmp = tmp.resize((size,size))
-                tmp.save(newfolder+'%d-%d.tif'% ((x+2)/2-1,(y+2)/2-1))
-    
-    
-    
-    
-    
-    #BoxMaker('/Users/willem/Documents/spectrum/','spectrum.tif',256,2)
-    ##BoxMaker('/Users/willem/Documents/spectrum/','spectrum.tif',256,3)
-    #BoxMaker('/Users/willem/Documents/spectrum/','spectrum.tif',256,4)
-    
-    #
-    #for row in xrange(dice):
-    #    for col in xrange(dice):
-    #        c = readTifChunk(fileName, (cw*col, ch*row, cw, ch))
-    #        im.fromarray(c).save(nextfolder+'%d-%d.tif' % (row,col))
+                tmp.save(osp.join(newfolder,'%d-%d.tif'% ((x+2)/2-1,(y+2)/2-1)))
+
+    def checkDir(self,newfolder):
+        if os.path.exists(osp.join(newfolder,"0-0.tif")):
+            return True
+        elif not os.path.exists(newfolder):
+            os.makedirs(newfolder)
+            return False

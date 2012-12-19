@@ -9,21 +9,28 @@ import Image as im
 #    levels: 5,
 #    tileSize: 1024
 #}
+'''
+        This is intialized to the folder that has all layers. 
+        You then give it UpperLeft, LowerRight and zoom
+        and it returns an image made up of stitched
+        together tiles.
+        It is used by viewer to ask for an image to view.
 
+        '''
 class TiledImage:
     def __init__(self, imageDir):
         self.imageDir = imageDir
-        self.picSize = im.open(imageDir + "new.tif").size
-        #print self.picSize
-        ##self.info = json.loads(file(osp.path(imageDir, 'info.json'), 'r').read())
-        self.width = 300
-        self.height = 300
-        self.tileSize = 1024
-        self.size = 1200
-
+        self.picSize = im.open(osp.join(imageDir, "tmp.tif")).size
+        Info = osp.join(self.imageDir,'info.json')
+        info = json.loads(file(Info,'r').read())
+        self.tileSize=info['tileSize']
 
 
     def getBlock(self, ul, lr, zoom):
+        ''' returns image from given parameters for viewer
+        ul = upperleft tuple for coords
+        lr = lowerright tuple
+        '''
         scale = 2**(zoom-1)##scale is used to make the units in terms of the bottom layer
         self.UpperLeft=ul
         self.LowerRight=lr

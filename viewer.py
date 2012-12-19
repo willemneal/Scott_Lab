@@ -15,7 +15,6 @@ class Viewer:
         print os.getcwd()
         '''
         This is the viewer used to view a tiled image (Ti)
-        
         '''
         self.topLayer = topLayer
         self.time1 = time()
@@ -100,7 +99,7 @@ class Viewer:
                 show()
                 self.time1 = t
                 return
-            else:
+            else:                                          ### Single Click ###
                 if event.key=='shift' and event.button==1 and not self.haveAllCoords():
                     self.coords.append([x,y])
                     print "you selected",x,y," and added it to ", self.coords
