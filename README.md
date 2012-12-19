@@ -1,4 +1,3 @@
-Scott_Lab
-=========
+This program views a large image and allows User to pick 8 points of reference (with shift+click) to split up the image.
 
-Cell Profiler Modules for Lab
+Instructions for use later. After Next Stable release.
